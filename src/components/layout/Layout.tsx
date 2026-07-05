@@ -1,8 +1,8 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Outlet, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useMapStore } from '../../store/useMapStore';
-import { Map, LayoutDashboard, LogIn, LogOut, BarChart2, Leaf, Shield } from 'lucide-react';
+import { Map, LayoutDashboard, LogIn, LogOut, BarChart2, Leaf, Shield, Menu, X } from 'lucide-react';
 import { supabase } from '../../services/supabase';
 import styles from './Layout.module.css';
 import MapSidebar from '../map/MapSidebar';
@@ -12,6 +12,7 @@ const Layout: React.FC = () => {
   const { reports } = useMapStore();
   const location = useLocation();
   const navigate = useNavigate();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -19,6 +20,8 @@ const Layout: React.FC = () => {
     setProfile(null);
     navigate('/login');
   };
+
+  const closeMenu = () => setIsMobileMenuOpen(false);
 
   const pendingCount = reports.filter(r => r.status === 'pending').length;
   const initials = profile?.full_name
@@ -37,13 +40,21 @@ const Layout: React.FC = () => {
 
   return (
     <div className={styles.layout}>
-      <aside className={styles.sidebar}>
+      {/* Mobile Overlay */}
+      {isMobileMenuOpen && (
+        <div className={styles.overlay} onClick={closeMenu} />
+      )}
+
+      <aside className={`${styles.sidebar} ${isMobileMenuOpen ? styles.sidebarOpen : ''}`}>
         {/* Logo */}
         <div className={styles.logo}>
           <div className={styles.logoIcon}>
             <Leaf size={20} />
           </div>
           <span>EcoMap</span>
+          <button className={styles.mobileCloseBtn} onClick={closeMenu}>
+            <X size={24} />
+          </button>
         </div>
 
         {/* Navigation */}
@@ -53,6 +64,7 @@ const Layout: React.FC = () => {
           <NavLink 
             to="/" 
             className={({ isActive }) => isActive ? `${styles.navItem} ${styles.navItemActive}` : styles.navItem}
+            onClick={closeMenu}
             end
           >
             <Map size={18} /> <span>Map View</span>
@@ -68,6 +80,7 @@ const Layout: React.FC = () => {
           <NavLink 
             to="/analytics" 
             className={({ isActive }) => isActive ? `${styles.navItem} ${styles.navItemActive}` : styles.navItem}
+            onClick={closeMenu}
           >
             <BarChart2 size={18} /> <span>Analytics</span>
           </NavLink>
@@ -76,6 +89,7 @@ const Layout: React.FC = () => {
             <NavLink 
               to="/dashboard" 
               className={({ isActive }) => isActive ? `${styles.navItem} ${styles.navItemActive}` : styles.navItem}
+              onClick={closeMenu}
             >
               {profile?.role === 'admin' ? <Shield size={18} /> : <LayoutDashboard size={18} />}
               <span>{profile?.role === 'admin' ? 'Admin Panel' : 'Dashboard'}</span>
@@ -97,7 +111,7 @@ const Layout: React.FC = () => {
               </button>
             </div>
           ) : (
-            <NavLink to="/login" className={styles.loginLink}>
+            <NavLink to="/login" className={styles.loginLink} onClick={closeMenu}>
               <LogIn size={18} /> <span>Sign In</span>
             </NavLink>
           )}
@@ -106,8 +120,13 @@ const Layout: React.FC = () => {
       
       <main className={styles.mainContent}>
         <header className={styles.topbar}>
-          <div className={styles.topbarTitle}>
-            {pageTitle}
+          <div className={styles.topbarLeft}>
+            <button className={styles.mobileMenuBtn} onClick={() => setIsMobileMenuOpen(true)}>
+              <Menu size={24} />
+            </button>
+            <div className={styles.topbarTitle}>
+              {pageTitle}
+            </div>
           </div>
           <div className={styles.topbarActions}>
             {pendingCount > 0 && (
